@@ -19,6 +19,8 @@ def make_fq_dict(path):
 
     fastq_dict = {}
 
+    print("Gathering fastqs...")
+
     try:
         fastqs = dxpy.find_data_objects(
             name="*fastq.gz", folder=path, name_mode="glob"
@@ -106,4 +108,4 @@ def run_workflow(workflow, fastq_dict, stages, stage_folders):
             inputs, folder=f"/output_{run_datetime}",
             stage_folders=stage_folders
         )
-        print(f"Running {sample}")
+        print(f"Started Sentieon for {sample}")
