@@ -14,7 +14,7 @@ def setup_downsampling_app():
     return app_handler
 
 
-def get_mapping_numbers(flagstat_folder):
+def get_mapping_numbers(flagstat_folders):
     """ Get the number of reads mapped for each sample
 
     Args:
@@ -24,30 +24,33 @@ def get_mapping_numbers(flagstat_folder):
         dict: Dict of sample name with number of mapped reads
     """
 
+    print("Getting flagstat mapping numbers...")
+
     flagstats = {}
 
-    flagstat_files = dxpy.find_data_objects(
-        classname="file", name="*.flagstat", folder=flagstat_folder,
-        name_mode="glob"
-    )
+    for flagstat_folder in flagstat_folders:
+        flagstat_files = dxpy.find_data_objects(
+            classname="file", name="*.flagstat", folder=flagstat_folder,
+            name_mode="glob"
+        )
 
-    for flagstat_file in flagstat_files:
-        flagstat_file_name = dxpy.DXFile(flagstat_file["id"]).name
-        sample_name = "_".join(flagstat_file_name.split("_")[:2])
+        for flagstat_file in flagstat_files:
+            flagstat_file_name = dxpy.DXFile(flagstat_file["id"]).name
+            sample_name = "_".join(flagstat_file_name.split("_")[:2])
 
-        with dxpy.open_dxfile(flagstat_file["id"]) as f:
-            for line in f:
-                line = line.strip().split()
+            with dxpy.open_dxfile(flagstat_file["id"]) as f:
+                for line in f:
+                    line = line.strip().split()
 
-                if "mapped" in line:
-                    nb_mapped = line[0]
-                    flagstats[sample_name] = nb_mapped
-                    break
+                    if "mapped" in line:
+                        nb_mapped = line[0]
+                        flagstats[sample_name] = nb_mapped
+                        break
 
     return flagstats
 
 
-def get_average_coverage(picard_folder):
+def get_average_coverage(picard_folders):
     """ Get mean coverage number obtained through picard WGS QC
 
     Args:
@@ -57,33 +60,36 @@ def get_average_coverage(picard_folder):
         dict: Dict of sample name to average coverage
     """
 
+    print("Getting average coverage from Picard QC...")
+
     picard = {}
 
-    picard_files = dxpy.find_data_objects(
-        classname="file", name="*.wgs_stats.tsv", folder=picard_folder,
-        name_mode="glob"
-    )
+    for picard_folder in picard_folders:
+        picard_files = dxpy.find_data_objects(
+            classname="file", name="*.wgs_stats.tsv", folder=picard_folder,
+            name_mode="glob"
+        )
 
-    for picard_file in picard_files:
-        picard_file_name = dxpy.DXFile(picard_file["id"]).name
-        sample_name = "_".join(picard_file_name.split("_")[:2])
+        for picard_file in picard_files:
+            picard_file_name = dxpy.DXFile(picard_file["id"]).name
+            sample_name = "_".join(picard_file_name.split("_")[:2])
 
-        data_bool = False
+            data_bool = False
 
-        with dxpy.open_dxfile(picard_file["id"]) as f:
-            for line in f:
-                if "GENOME_TERRITORY" in line:
-                    data_bool = True
-                    headers = line.strip().split()
-                    continue
+            with dxpy.open_dxfile(picard_file["id"]) as f:
+                for line in f:
+                    if "GENOME_TERRITORY" in line:
+                        data_bool = True
+                        headers = line.strip().split()
+                        continue
 
-                if data_bool:
-                    data = line.strip().split()
-                    break
+                    if data_bool:
+                        data = line.strip().split()
+                        break
 
-        for header, data_ele in zip(headers, data):
-            if header == "MEAN_COVERAGE":
-                picard[sample_name] = data_ele
+            for header, data_ele in zip(headers, data):
+                if header == "MEAN_COVERAGE":
+                    picard[sample_name] = data_ele
 
     return picard
 
@@ -102,6 +108,8 @@ def get_downsampling_fraction(flagstat_data, picard_data, coverage):
     """
 
     downsample_fraction = {}
+
+    print("Getting downsampling fraction arg for Picard Downsampling...")
 
     for sample in flagstat_data:
         nb_reads_for_wanted_coverage = float(flagstat_data[sample]) / float(picard_data[sample]) * float(coverage)
@@ -123,10 +131,12 @@ def gather_bams(sample_dict):
 
     bam_dict = {}
 
+    print("Gathering bams...")
+
     for sample in sample_dict:
         bam_file = dxpy.find_one_data_object(
-            more_ok=False, classname="file", name=f"{sample}_*.bam",
-            name_mode="glob"
+            more_ok=False, classname="file", name_mode="glob",
+            name=f"{sample}_markdup.bam"
         )
 
         bam_dict[sample] = [bam_file["id"]]
@@ -155,3 +165,4 @@ def start_downsampling_jobs(
         inputs["sorted_bam"] = utils.create_dnanexus_links(bam_dict[sample])
         inputs["fraction"] = downsampling_dict[sample]
         app_handler.run(inputs, tags=["1.1.0"], folder=out_folder)
+        print(f"Started downsampling job for {sample}")
