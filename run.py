@@ -3,6 +3,7 @@ import argparse
 import downsample
 import single
 import utils
+import cnv_calling
 
 
 sWGS_project = "project-G8KJ7x84q42xKQJ95Fx2P7ZJ"
@@ -27,7 +28,8 @@ def main(args):
         single.run_workflow(workflow, fastq_dict, stages, stage_folders)
 
     elif cmd == "downsampling":
-        app_handler = downsample.setup_downsampling_app()
+        picard_app_handler = downsample.setup_downsampling_app()
+        samtools_app_handler = downsample.setup_indexing_app()
         sample_mapping_numbers = downsample.get_mapping_numbers(
             args.flagstat_folders
         )
@@ -38,26 +40,42 @@ def main(args):
             sample_mapping_numbers, sample_average_coverage, args.coverage
         )
         sample_bams = downsample.gather_bams(sample_downsampling_fraction)
-        downsample.start_downsampling_jobs(
-            app_handler, sample_bams, sample_downsampling_fraction, args.output
+        out_bams = downsample.start_downsampling_jobs(
+            picard_app_handler, sample_bams, sample_downsampling_fraction,
+            args.output
+        )
+        downsample.start_indexing_jobs(
+            samtools_app_handler, out_bams, args.output
         )
 
     elif cmd == "cnv_calling":
         cnv_cmd = args.cnv_op
         app_handler = cnv_calling.setup_cnv_calling_app()
 
-        downsampled_bams, downsampled_bais = cnv_calling.get_bams_and_bais(
-            args.downsampled_bam_folder
-        )
+        if cnv_cmd == "workflow":
+            cnv_calling.run_cnv_calling(
+                app_handler, args.downsampled_bam_folder, args.normal_file,
+                args.sex_file, args.binsize_npz, args.binsize_ref,
+                args.out_folder
+            )
 
         if cnv_cmd == "npz":
-            cnv_calling.convert_npz()
+            cnv_calling.convert_npz(
+                app_handler, args.downsampled_bam_folder, args.binsize_npz,
+                args.out_folder
+            )
 
         if cnv_cmd == "ref":
-            cnv_calling.create_ref()
+            cnv_calling.create_ref(
+                app_handler, args.binsize_ref, args.out_folder,
+                normal_file=args.normal_file, npz_folder=args.npz_folder
+            )
 
         if cnv_cmd == "cnv":
-            cnv_calling.call_cnvs()
+            cnv_calling.call_cnvs(
+                app_handler, args.sex_file, args.out_folder, 
+                npz_folder=args.npz_folder, ref_folder=args.npz_reference
+            )
 
 
 if __name__ == "__main__":
@@ -87,20 +105,40 @@ if __name__ == "__main__":
     )
     downsampling.set_defaults(which="downsampling")
 
-    cnv_calling = subparsers.add_parser("cnv_calling")
-    cnv_subparser = cnv_calling.add_subparsers(dest="cnv_op")
+    cnv_calling_parser = subparsers.add_parser("cnv_calling")
+    cnv_subparser = cnv_calling_parser.add_subparsers(dest="cnv_op")
 
     full_workflow = cnv_subparser.add_parser(
         "workflow",
         help="Run the cnv calling without having to run individual commands",
-        description="Run the cnv calling without having to run individual commands"
+        description=(
+            "Run the cnv calling without having to run individual commands"
+        )
     )
     full_workflow.add_argument(
         "-d", "--downsampled_bam_folder", nargs="+",
         help="Downsampled bam DNAnexus folder"
     )
     full_workflow.add_argument(
-        "-n", "--normals_file", help="File containing normal samples"
+        "-n", "--normal_file", default=None,
+        help="File containing normal samples"
+    )
+    full_workflow.add_argument(
+        "-s", "--sex_file", help="File containing the sex of the samples"
+    )
+    full_workflow.add_argument(
+        "-b_npz", "--binsize_npz", type=int,
+        help="Binsize for converting bams into npz"
+    )
+    full_workflow.add_argument(
+        "-b_ref", "--binsize_ref", type=int, help="Binsize for reference"
+    )
+    full_workflow.add_argument(
+        "-o", "--out_folder",
+        help=(
+            "Output folder where output of the apps will dump their own out "
+            "folders"
+        )
     )
 
     npz_generation = cnv_subparser.add_parser(
@@ -110,6 +148,14 @@ if __name__ == "__main__":
     npz_generation.add_argument(
         "downsampled_bam_folder", nargs="+",
         help="Downsampled bam DNAnexus folder"
+    )
+    npz_generation.add_argument("-b", "--binsize", help="Binsize for npz")
+    npz_generation.add_argument(
+        "-o", "--out_folder",
+        help=(
+            "Output folder where output of the app will dump its own out "
+            "folder"
+        )
     )
 
     ref_generation = cnv_subparser.add_parser(
@@ -121,7 +167,18 @@ if __name__ == "__main__":
         help="Folder containing npz files in DNAnexus"
     )
     ref_generation.add_argument(
-        "-n", "--normals_file", help="File containing normal samples"
+        "-b", "--binsize", help="Binsize for the reference file"
+    )
+    ref_generation.add_argument(
+        "-n", "--normals_file", default=None,
+        help="File containing normal samples"
+    )
+    ref_generation.add_argument(
+        "-o", "--out_folder",
+        help=(
+            "Output folder where output of the app will dump its own out "
+            "folder"
+        )
     )
 
     cnv_generation = cnv_subparser.add_parser(
@@ -133,6 +190,16 @@ if __name__ == "__main__":
     )
     cnv_generation.add_argument(
         "-r", "--npz_reference", help="DNAnexus path to npz reference"
+    )
+    cnv_generation.add_argument(
+        "-s", "--sex_file", help="File containing the sex of the samples"
+    )
+    cnv_generation.add_argument(
+        "-o", "--out_folder",
+        help=(
+            "Output folder where output of the app will dump its own out "
+            "folder"
+        )
     )
 
     args = parser.parse_args()
