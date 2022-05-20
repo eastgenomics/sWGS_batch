@@ -14,6 +14,17 @@ def setup_downsampling_app():
     return app_handler
 
 
+def setup_indexing_app():
+    """Setup DXApp Samtools indexer
+
+    Returns:
+        dxpy.DXApp: DXApp object
+    """
+
+    app_handler = dxpy.DXApp(name="samtools_index")
+    return app_handler
+
+
 def get_mapping_numbers(flagstat_folders):
     """ Get the number of reads mapped for each sample
 
@@ -166,3 +177,9 @@ def start_downsampling_jobs(
         inputs["fraction"] = downsampling_dict[sample]
         app_handler.run(inputs, tags=["1.1.0"], folder=out_folder)
         print(f"Started downsampling job for {sample}")
+
+    return
+
+
+def start_indexing_jobs(app_handler, list_bams, out_folder):
+    pass
