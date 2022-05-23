@@ -1,4 +1,6 @@
 from collections import defaultdict
+from pathlib import Path
+
 import dxpy
 
 import utils
@@ -7,6 +9,12 @@ import utils
 
 
 def setup_cnv_calling_app():
+    """ Return wisecondorX app object for cnv calling
+
+    Returns:
+        DXApp: DXApp for wisecondorX
+    """
+
     app_handler = dxpy.DXApp(name="eggd_wisecondorX")
     return app_handler
 
@@ -15,6 +23,18 @@ def setup_cnv_calling_app():
 
 
 def get_bams_and_bais(bam_folders):
+    """ Get bams and bais given a list of folders
+
+    Args:
+        bam_folders (list): List of folders to look into for bams and bais
+
+    Raises:
+        Exception: if a bai is found but not the bam
+
+    Returns:
+        dict: Dict of sample ids and their bam/bai
+    """
+
     print("Gathering bams and bais...")
 
     bams_bais = defaultdict(lambda: defaultdict(lambda: str))
@@ -51,6 +71,15 @@ def get_bams_and_bais(bam_folders):
 
 
 def get_npzs_from_folder(npz_folders):
+    """ Get npz files from list of folders
+
+    Args:
+        npz_folders (list): List of folders to look into for npz
+
+    Returns:
+        dict: Dict of sample ids and their dnanexus links
+    """
+
     print("Gathering npzs...")
 
     npzs = {}
@@ -70,11 +99,18 @@ def get_npzs_from_folder(npz_folders):
     return npzs
 
 
-def get_ref_path_from_job(ref_job):
-    return f"{ref_job.describe()['folder']}/ref.npz"
-
-
 def get_normal_samples(npzs, normal_samples):
+    """Given a dict of sample ids and their npz file and a list of sample ids, 
+    create a new dict with only the samples in the list
+
+    Args:
+        npzs (dict): Dict of sample ids and their npz file
+        normal_samples (list): List of sample ids
+
+    Returns:
+        dict: Dict of sample ids and their npz file
+    """
+
     normals = {}
 
     for sample_id in npzs:
@@ -85,20 +121,36 @@ def get_normal_samples(npzs, normal_samples):
 
 
 def get_sex_of_sample(sample_id, sample_sexes):
+    """ Given a sample id and dict of sample ids and their sex, return the sex.
+    If the sample is not found in the dict, return None
+
+    Args:
+        sample_id (str): Sample id
+        sample_sexes (dict): Dict of sample ids and their sex
+
+    Returns:
+        str: One letter string to define sex
+    """
+
     if sample_id in sample_sexes:
         return sample_sexes[sample_id]
 
     return None
 
 
-def get_ref_output_from_job(job, output_field):
-    return job.get_output_ref(output_field)
-
-
 """ parsing functions """
 
 
 def parse_sex_file(sex_file):
+    """ Parse file containing sample ids and the sex of those samples
+
+    Args:
+        sex_file (str): Path to the sex file
+
+    Returns:
+        dict: Dict of sample ids and their sex
+    """
+
     sample_sexes = {}
 
     with open(sex_file) as f:
@@ -110,6 +162,15 @@ def parse_sex_file(sex_file):
 
 
 def parse_normal_sample_file(file):
+    """ Parse file containing normal sample ids
+
+    Args:
+        file (str): Path to normal sample file
+
+    Returns:
+        list: List of normal samples
+    """
+
     normal_samples = []
 
     with open(file) as f:
@@ -123,6 +184,17 @@ def parse_normal_sample_file(file):
 
 
 def convert_npz(app_handler, bam_folder, binsize, out_folder):
+    """ Start jobs for converting bams to npz
+
+    Args:
+        app_handler (DXApp): DXApp object for wisecondorX
+        bam_folder (list): List of folders to look for bams and bais into
+        binsize (int): Binsize for npz
+        out_folder (str): Out folder for DNAnexus
+
+    Returns:
+        dict: Dict of sample ids and their job objects
+    """
 
     sample_bams_bais = get_bams_and_bais(bam_folder)
 
@@ -132,6 +204,8 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
     print("Setting up conversion jobs...")
 
     for sample_id in sample_bams_bais:
+        # both bam and bai are array:file classes so they need to be put in
+        # lists
         inputs["bam"] = [
             utils.create_dnanexus_links(sample_bams_bais[sample_id]["bam"])
         ]
@@ -156,14 +230,34 @@ def create_ref(
     app_handler, binsize, out_folder, normal_file=None, npz_folder=None,
     npz_jobs=None,
 ):
+    """ Start reference creation job
+
+    Args:
+        app_handler (DXApp): DXApp for wisecondorX
+        binsize (int): Binsize for reference
+        out_folder (str): Out folder in DNAnexus
+        normal_file (str, optional): Path to file containing normal sample ids.
+                                    Defaults to None.
+        npz_folder (str, optional): Folder containing the npz files. Defaults
+                                    to None.
+        npz_jobs (dict, optional): Dict containing sample ids and their
+                                    conversion job. Defaults to None.
+
+    Raises:
+        Exception: check if npz folder or npz job is passed
+
+    Returns:
+        DXJob: DXJob for the reference creation job
+    """
+
     npzs = {}
 
     if npz_folder:
         npzs = get_npzs_from_folder(npz_folder)
     elif npz_jobs:
         for sample_id in npz_jobs:
-            npzs[sample_id] = get_ref_output_from_job(
-                npz_jobs[sample_id], "wisecondorx_output"
+            npzs[sample_id] = npz_jobs[sample_id].get_output_ref(
+                "wisecondorx_output"
             )
     else:
         raise Exception("No npz folder or npz jobs passed")
@@ -187,10 +281,14 @@ def create_ref(
     if npz_jobs:
         ref_job = app_handler.run(
             inputs, folder=f"{out_folder}/ref", name=job_name,
-            depends_on=list(npz_jobs.values())
+            depends_on=list(npz_jobs.values()),
+            instance_type="mem1_ssd1_v2_x16"
         )
     else:
-        ref_job = app_handler.run(inputs, folder=f"{out_folder}/ref")
+        ref_job = app_handler.run(
+            inputs, folder=f"{out_folder}/ref",
+            instance_type="mem1_ssd1_v2_x16"
+        )
 
     print("Reference job started...")
 
@@ -201,6 +299,26 @@ def call_cnvs(
     app_handler, sex_file, out_folder, npz_jobs=None, ref_job=None,
     npz_folder=None, ref_path=None
 ):
+    """ Start cnv calling jobs
+
+    Args:
+        app_handler (DXApp): DXApp for wisecondorX
+        sex_file (str): Path to file containing sample ids and their sex
+        out_folder (str): Out folder in DNAnexus
+        npz_jobs (dict, optional): Dict of sample ids and their npz jobs.
+                                    Defaults to None.
+        ref_job (DXJob, optional): DXJob for the creation of reference.
+                                    Defaults to None.
+        npz_folder (str, optional): DNAnexus path to find npz files in.
+                                    Defaults to None.
+        ref_path (str, optional): DNAnexus path to reference file.
+                                    Defaults to None.
+
+    Raises:
+        Exception: Check if npz folder or npz jobs passed
+        Exception: Check if ref folder or ref job passed
+    """
+
     sample_sexes = parse_sex_file(sex_file)
 
     npzs = {}
@@ -209,19 +327,24 @@ def call_cnvs(
         npzs = get_npzs_from_folder(npz_folder)
     elif npz_jobs:
         for sample_id in npz_jobs:
-            npzs[sample_id] = get_ref_output_from_job(
-                npz_jobs[sample_id], "wisecondorx_output"
+            npzs[sample_id] = npz_jobs[sample_id].get_output_ref(
+                "wisecondorx_output"
             )
     else:
         raise Exception("No npz folder or npz jobs passed")
 
     if ref_path:
-        ref = utils.create_dnanexus_links(dxpy.DXFile(ref_path).id)
-    elif ref_job:
-        ref = get_ref_output_from_job(
-            ref_job, "wisecondorx_output"
+        assert ref_path.startswith("/"), (
+            "DNAnexus paths need to start with a /"
         )
-        print(ref)
+        folder_path = Path(ref_path).parent
+        ref_name = Path(ref_path).name
+        ref_object = dxpy.find_one_data_object(
+            folder=folder_path, name=ref_name
+        )
+        ref = utils.create_dnanexus_links(ref_object["id"])
+    elif ref_job:
+        ref = ref_job.get_output_ref("wisecondorx_output")
     else:
         raise Exception("No ref folder or ref job passed")
 
@@ -262,6 +385,18 @@ def run_cnv_calling(
     app_handler, bam_folder, normal_file, sex_file, npz_binsize, ref_binsize,
     out_folder
 ):
+    """ Run the full "workflow" for cnv calling using wisecondorX
+
+    Args:
+        app_handler (DXApp): DXApp for wisecondorX
+        bam_folder (list): List of bam folders to look into for bams and bais
+        normal_file (str): Path to normal file
+        sex_file (str): Path to sex file
+        npz_binsize (int): Binsize for convert npz jobs
+        ref_binsize (int): Binsize for create reference job
+        out_folder (str): DNAnexus out folder
+    """
+
     npz_jobs = convert_npz(app_handler, bam_folder, npz_binsize, out_folder)
     ref_job = create_ref(
         app_handler, ref_binsize, out_folder, normal_file=normal_file,
