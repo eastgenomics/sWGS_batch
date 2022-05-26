@@ -92,8 +92,9 @@ def get_npzs_from_folder(npz_folders):
 
         for npz in npz_files:
             npz_file = dxpy.DXFile(npz["id"])
-            sample_id = "_".join(npz_file.name.split("_")[0:2])
-            dnanexus_link = utils.create_dnanexus_links(npz_file.id)
+            npz_file_name = Path(npz_file.name).stem
+            sample_id = "_".join(npz_file_name.split("_")[0:2])
+            dnanexus_link = utils.create_dnanexus_links([npz_file.id])
             npzs[sample_id] = dnanexus_link
 
     return npzs
@@ -276,18 +277,20 @@ def create_ref(
     inputs["create_ref"] = True
     job_name = f"{app_handler.name} - Create ref ({binsize})"
 
+    assert inputs["npz"], "No normal npz files found."
+
     print("Setting up reference job...")
 
     if npz_jobs:
         ref_job = app_handler.run(
             inputs, folder=f"{out_folder}/ref", name=job_name,
             depends_on=list(npz_jobs.values()),
-            instance_type="mem1_ssd1_v2_x16"
+            instance_type="mem1_ssd1_v2_x36"
         )
     else:
         ref_job = app_handler.run(
             inputs, folder=f"{out_folder}/ref",
-            instance_type="mem1_ssd1_v2_x16"
+            instance_type="mem1_ssd1_v2_x36", name=job_name,
         )
 
     print("Reference job started...")
