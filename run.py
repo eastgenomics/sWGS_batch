@@ -61,13 +61,13 @@ def main(args):
 
         if cnv_cmd == "npz":
             cnv_calling.convert_npz(
-                app_handler, args.downsampled_bam_folder, args.binsize_npz,
+                app_handler, args.downsampled_bam_folder, args.binsize,
                 args.out_folder
             )
 
         if cnv_cmd == "ref":
             cnv_calling.create_ref(
-                app_handler, args.binsize_ref, args.out_folder,
+                app_handler, args.binsize, args.out_folder,
                 normal_file=args.normal_file, npz_folder=args.npz_folder
             )
 
@@ -167,10 +167,10 @@ if __name__ == "__main__":
         help="Folder containing npz files in DNAnexus"
     )
     ref_generation.add_argument(
-        "-b", "--binsize", help="Binsize for the reference file"
+        "-b", "--binsize", type=int, help="Binsize for the reference file"
     )
     ref_generation.add_argument(
-        "-n", "--normals_file", default=None,
+        "-n", "--normal_file", default=None,
         help="File containing normal samples"
     )
     ref_generation.add_argument(
