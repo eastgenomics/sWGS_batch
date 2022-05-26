@@ -285,12 +285,12 @@ def create_ref(
         ref_job = app_handler.run(
             inputs, folder=f"{out_folder}/ref", name=job_name,
             depends_on=list(npz_jobs.values()),
-            instance_type="mem1_ssd1_v2_x36"
+            instance_type="mem1_ssd1_v2_x16"
         )
     else:
         ref_job = app_handler.run(
             inputs, folder=f"{out_folder}/ref",
-            instance_type="mem1_ssd1_v2_x36", name=job_name,
+            instance_type="mem1_ssd1_v2_x16", name=job_name,
         )
 
     print("Reference job started...")
