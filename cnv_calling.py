@@ -200,11 +200,11 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
     sample_bams_bais = get_bams_and_bais(bam_folder)
 
     jobs = {}
-    inputs = {}
 
     print("Setting up conversion jobs...")
 
     for sample_id in sample_bams_bais:
+        inputs = {}
         # both bam and bai are array:file classes so they need to be put in
         # lists
         inputs["bam"] = [
@@ -340,24 +340,23 @@ def call_cnvs(
         assert ref_path.startswith("/"), (
             "DNAnexus paths need to start with a /"
         )
-        folder_path = Path(ref_path).parent
-        ref_name = Path(ref_path).name
+        folder_path = str(Path(ref_path).parent)
+        ref_name = str(Path(ref_path).name)
         ref_object = dxpy.find_one_data_object(
             folder=folder_path, name=ref_name
         )
-        ref = utils.create_dnanexus_links(ref_object["id"])
+        ref = utils.create_dnanexus_links([ref_object["id"]])
     elif ref_job:
         ref = ref_job.get_output_ref("wisecondorx_output")
     else:
         raise Exception("No ref folder or ref job passed")
 
-    inputs = {}
-
     print("Setting up cnv calling jobs...")
 
     for sample_id in npzs:
+        inputs = {}
         inputs["npz"] = [npzs[sample_id]]
-        inputs["reference"] = ref
+        inputs["reference"] = [ref]
         inputs["variant_calling"] = True
 
         sex = get_sex_of_sample(sample_id, sample_sexes)
