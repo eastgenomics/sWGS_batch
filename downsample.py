@@ -156,7 +156,8 @@ def gather_bams(sample_dict):
 
 
 def start_downsampling_jobs(
-    app_handler, bam_dict, downsampling_dict, out_folder
+    downsample_app_handler, samtools_index_app_handler, bam_dict,
+    downsampling_dict, out_folder
 ):
     """ For every sample, start a downsampling job
 
@@ -168,18 +169,26 @@ def start_downsampling_jobs(
     """
 
     if out_folder is None:
-        out_folder = f"{app_handler.describe()['name']}_v1.1.0"
-
-    inputs = {}
+        out_folder = f"{downsample_app_handler.describe()['name']}_v1.1.0"
 
     for sample in bam_dict:
-        inputs["sorted_bam"] = utils.create_dnanexus_links(bam_dict[sample])
-        inputs["fraction"] = downsampling_dict[sample]
-        app_handler.run(inputs, tags=["1.1.0"], folder=out_folder)
-        print(f"Started downsampling job for {sample}")
+        downsampling_inputs = {}
+        downsampling_inputs["sorted_bam"] = utils.create_dnanexus_links(
+            bam_dict[sample]
+        )
+        downsampling_inputs["fraction"] = downsampling_dict[sample]
+
+        job = downsample_app_handler.run(
+            downsampling_inputs, tags=["1.1.0"], folder=out_folder
+        )
+
+        indexing_inputs = {}
+        indexing_inputs["sorted_bam"] = job.get_output_ref("sorted_bam")
+        samtools_index_app_handler.run(
+            indexing_inputs, folder=out_folder, depends_on=job
+        )
+
+    print(f"Started downsampling jobs")
+    print(f"Setup indexing jobs")
 
     return
-
-
-def start_indexing_jobs(app_handler, list_bams, out_folder):
-    pass
