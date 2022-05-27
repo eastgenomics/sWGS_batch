@@ -152,6 +152,8 @@ def gather_bams(sample_dict):
 
         bam_dict[sample] = [bam_file["id"]]
 
+    assert bam_dict, "No bams found"
+
     return bam_dict
 
 
