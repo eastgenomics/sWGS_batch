@@ -97,6 +97,8 @@ def get_npzs_from_folder(npz_folders):
             dnanexus_link = utils.create_dnanexus_links([npz_file.id])
             npzs[sample_id] = dnanexus_link
 
+    assert npzs, "No npz files found"
+
     return npzs
 
 
