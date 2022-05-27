@@ -41,11 +41,8 @@ def main(args):
         )
         sample_bams = downsample.gather_bams(sample_downsampling_fraction)
         out_bams = downsample.start_downsampling_jobs(
-            picard_app_handler, sample_bams, sample_downsampling_fraction,
-            args.output
-        )
-        downsample.start_indexing_jobs(
-            samtools_app_handler, out_bams, args.output
+            picard_app_handler, samtools_app_handler, sample_bams,
+            sample_downsampling_fraction, args.output
         )
 
     elif cmd == "cnv_calling":
