@@ -187,7 +187,7 @@ def start_downsampling_jobs(
         indexing_inputs = {}
         indexing_inputs["sorted_bam"] = job.get_output_ref("sorted_bam")
         samtools_index_app_handler.run(
-            indexing_inputs, folder=out_folder, depends_on=job
+            indexing_inputs, folder=out_folder, depends_on=[job]
         )
 
     print(f"Started downsampling jobs")
