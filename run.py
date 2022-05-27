@@ -74,7 +74,7 @@ def main(args):
         if cnv_cmd == "cnv":
             cnv_calling.call_cnvs(
                 app_handler, args.sex_file, args.out_folder, 
-                npz_folder=args.npz_folder, ref_folder=args.npz_reference
+                npz_folder=args.npz_folder, ref_path=args.npz_reference
             )
 
 
