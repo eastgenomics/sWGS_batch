@@ -101,7 +101,7 @@ def get_npzs_from_folder(npz_folders):
 
 
 def get_normal_samples(npzs, normal_samples):
-    """Given a dict of sample ids and their npz file and a list of sample ids, 
+    """Given a dict of sample ids and their npz file and a list of sample ids,
     create a new dict with only the samples in the list
 
     Args:
