@@ -117,8 +117,7 @@ if __name__ == "__main__":
         help="Downsampled bam DNAnexus folder"
     )
     full_workflow.add_argument(
-        "-n", "--normal_file", default=None,
-        help="File containing normal samples"
+        "-n", "--normal_file", help="File containing normal samples"
     )
     full_workflow.add_argument(
         "-s", "--sex_file", help="File containing the sex of the samples"
