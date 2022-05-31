@@ -65,13 +65,14 @@ def main(args):
         if cnv_cmd == "ref":
             cnv_calling.create_ref(
                 app_handler, args.binsize, args.out_folder,
-                normal_file=args.normal_file, npz_folder=args.npz_folder
+                normal_file=args.normal_file, npz_folders=args.npz_folders
             )
 
         if cnv_cmd == "cnv":
             cnv_calling.call_cnvs(
-                app_handler, args.sex_file, args.out_folder, 
-                npz_folder=args.npz_folder, ref_path=args.npz_reference
+                app_handler, args.sex_file, args.out_folder,
+                npz_samples=args.npz_samples, npz_folders=args.npz_folders,
+                ref_path=args.npz_reference
             )
 
 
@@ -182,7 +183,12 @@ if __name__ == "__main__":
         description="Individual step to generate cnv calling output"
     )
     cnv_generation.add_argument(
-        "-npz", "--npz_folder", nargs="+", help="Folder containing npz files"
+        "-npz_f", "--npz_folders", nargs="+", default=None,
+        help="Folder(s) containing npz files"
+    )
+    cnv_generation.add_argument(
+        "-npz_s", "--npz_samples", nargs="+", default=None,
+        help="Individual names of the samples"
     )
     cnv_generation.add_argument(
         "-r", "--npz_reference", help="DNAnexus path to npz reference"
