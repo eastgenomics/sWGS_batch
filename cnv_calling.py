@@ -70,11 +70,12 @@ def get_bams_and_bais(bam_folders):
     return bams_bais
 
 
-def get_npzs_from_folder(npz_folders):
+def get_npzs_from_folders(npz_folders, npz_samples=[]):
     """ Get npz files from list of folders
 
     Args:
         npz_folders (list): List of folders to look into for npz
+        npz_samples (list): List of samples to gather in folder
 
     Returns:
         dict: Dict of sample ids and their dnanexus links
@@ -83,6 +84,7 @@ def get_npzs_from_folder(npz_folders):
     print("Gathering npzs...")
 
     npzs = {}
+    filtered_npzs = {}
 
     for npz_folder in npz_folders:
         npz_files = dxpy.find_data_objects(
@@ -97,9 +99,16 @@ def get_npzs_from_folder(npz_folders):
             dnanexus_link = utils.create_dnanexus_links([npz_file.id])
             npzs[sample_id] = dnanexus_link
 
-    assert npzs, "No npz files found"
+    if npz_samples:
+        for sample_id in npzs:
+            if sample_id in npz_samples:
+                filtered_npzs[sample_id] = npzs[sample_id]
+    else:
+        filtered_npzs = npzs
 
-    return npzs
+    assert filtered_npzs, "No npz files found"
+
+    return filtered_npzs
 
 
 def get_normal_samples(npzs, normal_samples):
@@ -230,7 +239,7 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
 
 
 def create_ref(
-    app_handler, binsize, out_folder, normal_file=None, npz_folder=None,
+    app_handler, binsize, out_folder, normal_file=None, npz_folders=None,
     npz_jobs=None,
 ):
     """ Start reference creation job
@@ -241,8 +250,8 @@ def create_ref(
         out_folder (str): Out folder in DNAnexus
         normal_file (str, optional): Path to file containing normal sample ids.
                                     Defaults to None.
-        npz_folder (str, optional): Folder containing the npz files. Defaults
-                                    to None.
+        npz_folders (list, optional): Folders containing the npz files.
+                                    Defaults to None.
         npz_jobs (dict, optional): Dict containing sample ids and their
                                     conversion job. Defaults to None.
 
@@ -255,8 +264,8 @@ def create_ref(
 
     npzs = {}
 
-    if npz_folder:
-        npzs = get_npzs_from_folder(npz_folder)
+    if npz_folders:
+        npzs = get_npzs_from_folders(npz_folders)
     elif npz_jobs:
         for sample_id in npz_jobs:
             npzs[sample_id] = npz_jobs[sample_id].get_output_ref(
@@ -302,7 +311,7 @@ def create_ref(
 
 def call_cnvs(
     app_handler, sex_file, out_folder, npz_jobs=None, ref_job=None,
-    npz_folder=None, ref_path=None
+    npz_samples=[], npz_folders=None, ref_path=None
 ):
     """ Start cnv calling jobs
 
@@ -314,7 +323,9 @@ def call_cnvs(
                                     Defaults to None.
         ref_job (DXJob, optional): DXJob for the creation of reference.
                                     Defaults to None.
-        npz_folder (str, optional): DNAnexus path to find npz files in.
+        npz_samples (str, optional): DNAnexus path to find npz files in.
+                                    Defaults to None.
+        npz_folders (str, optional): DNAnexus path to find npz files in.
                                     Defaults to None.
         ref_path (str, optional): DNAnexus path to reference file.
                                     Defaults to None.
@@ -328,8 +339,8 @@ def call_cnvs(
 
     npzs = {}
 
-    if npz_folder:
-        npzs = get_npzs_from_folder(npz_folder)
+    if npz_folders:
+        npzs = get_npzs_from_folders(npz_folders, npz_samples)
     elif npz_jobs:
         for sample_id in npz_jobs:
             npzs[sample_id] = npz_jobs[sample_id].get_output_ref(
