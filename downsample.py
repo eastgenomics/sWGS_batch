@@ -65,7 +65,7 @@ def get_average_coverage(picard_folders):
     """ Get mean coverage number obtained through picard WGS QC
 
     Args:
-        picard_folder (str): Folder where the Picard QC is located
+        picard_folders (str): Folder where the Picard QC is located
 
     Returns:
         dict: Dict of sample name to average coverage
