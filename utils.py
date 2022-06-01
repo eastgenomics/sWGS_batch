@@ -9,11 +9,6 @@ def get_run_datetime():
     return run_datetime
 
 
-def setup_workflow(workflow_id, project_id):
-    workflow = dxpy.DXWorkflow(workflow_id, project=project_id)
-    return workflow
-
-
 def get_workflow_stage_info(workflow_id):
     """ Get the workflow stage info i.e. stage id, app id and app name
     Args:
