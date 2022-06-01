@@ -5,6 +5,19 @@ import dxpy
 import utils
 
 
+def setup_workflow():
+    """ Setup single workflow for sWGS
+
+    Returns:
+        DXWorkflow: DXWorkflow object for single workflow
+    """
+
+    sWGS_project = "project-G8KJ7x84q42xKQJ95Fx2P7ZJ"
+    dias_single = "workflow-G8vy0v84q42qqBBf6GfgKZ89"
+    workflow = dxpy.DXWorkflow(dias_single, project=sWGS_project)
+    return workflow
+
+
 def make_fq_dict(path):
     """ Match fastq files located in the given DNAnexus path
 

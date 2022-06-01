@@ -6,9 +6,6 @@ import utils
 import cnv_calling
 
 
-sWGS_project = "project-G8KJ7x84q42xKQJ95Fx2P7ZJ"
-dias_single = "workflow-G8vy0v84q42qqBBf6GfgKZ89"
-
 stages = {
     "sentieon_R1": "stage-Fy6fpk040vZZPPbq96Jb2KfK.reads_fastqgzs",
     "sentieon_R2": "stage-Fy6fpk040vZZPPbq96Jb2KfK.reads2_fastqgzs",
@@ -21,8 +18,8 @@ def main(args):
     cmd = args.cmd
 
     if cmd == "align":
+        workflow = single.setup_workflow()
         fastq_dict = single.make_fq_dict(args.fastq_folder)
-        workflow = utils.setup_workflow(dias_single, sWGS_project)
         workflow_stage_info = utils.get_workflow_stage_info(workflow.id)
         stage_folders = utils.get_stage_output_folders(workflow_stage_info)
         single.run_workflow(workflow, fastq_dict, stages, stage_folders)
