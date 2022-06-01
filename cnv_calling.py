@@ -49,6 +49,8 @@ def get_bams_and_bais(bam_folders):
             bam = dxpy.DXFile(bam["id"])
             sample_id = "_".join(bam.name.split("_")[0:2])
             bams_bais[sample_id]["bam"] = [bam.id]
+        else:
+            print(f"No bams file found in {bam_folder}")
 
     for bam_folder in bam_folders:
         bai_files = dxpy.find_data_objects(
@@ -64,6 +66,8 @@ def get_bams_and_bais(bam_folders):
                 bams_bais[sample_id]["bai"] = [bai.id]
             else:
                 raise Exception(f"Found bai for {sample_id} but not a bam")
+        else:
+            print(f"No bais file found in {bam_folder}")
 
     assert bams_bais, "No bams or bais found"
 
