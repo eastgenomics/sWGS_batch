@@ -55,7 +55,7 @@ def main(args):
 
         if cnv_cmd == "npz":
             cnv_calling.convert_npz(
-                app_handler, args.bam_folder, args.binsize,
+                app_handler, args.bam_folders, args.binsize,
                 args.out_folder
             )
 
@@ -111,8 +111,8 @@ if __name__ == "__main__":
         )
     )
     full_workflow.add_argument(
-        "-f", "--bam_folder", nargs="+",
-        help="Bam DNAnexus folder"
+        "-f", "--bam_folders", nargs="+",
+        help="Bam DNAnexus folder(s)"
     )
     full_workflow.add_argument(
         "-n", "--normal_file", help="File containing normal samples"
@@ -140,10 +140,11 @@ if __name__ == "__main__":
         description="Individual step to generate npz files from BAM and BAI"
     )
     npz_generation.add_argument(
-        "bam_folder", nargs="+",
-        help="Bam DNAnexus folder"
+        "bam_folders", nargs="+", help="Bam DNAnexus folder(s)"
     )
-    npz_generation.add_argument("-b", "--binsize", help="Binsize for npz")
+    npz_generation.add_argument(
+        "-b", "--binsize", help="Binsize for npz", type=int
+    )
     npz_generation.add_argument(
         "-o", "--out_folder",
         help=(
@@ -157,8 +158,8 @@ if __name__ == "__main__":
         description="Individual step to generate npz reference file"
     )
     ref_generation.add_argument(
-        "-f", "--npz_folder", nargs="+",
-        help="Folder containing npz files in DNAnexus"
+        "-f", "--npz_folders", nargs="+",
+        help="Folder(s) containing npz files in DNAnexus"
     )
     ref_generation.add_argument(
         "-b", "--binsize", type=int, help="Binsize for the reference file"
