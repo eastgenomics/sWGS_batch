@@ -48,14 +48,14 @@ def main(args):
 
         if cnv_cmd == "workflow":
             cnv_calling.run_cnv_calling(
-                app_handler, args.downsampled_bam_folder, args.normal_file,
+                app_handler, args.bam_folder, args.normal_file,
                 args.sex_file, args.binsize_npz, args.binsize_ref,
                 args.out_folder
             )
 
         if cnv_cmd == "npz":
             cnv_calling.convert_npz(
-                app_handler, args.downsampled_bam_folder, args.binsize,
+                app_handler, args.bam_folder, args.binsize,
                 args.out_folder
             )
 
@@ -140,8 +140,8 @@ if __name__ == "__main__":
         description="Individual step to generate npz files from BAM and BAI"
     )
     npz_generation.add_argument(
-        "downsampled_bam_folder", nargs="+",
-        help="Downsampled bam DNAnexus folder"
+        "bam_folder", nargs="+",
+        help="Bam DNAnexus folder"
     )
     npz_generation.add_argument("-b", "--binsize", help="Binsize for npz")
     npz_generation.add_argument(
