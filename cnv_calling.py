@@ -265,6 +265,12 @@ def create_ref(
 
     if npz_folders:
         npzs = get_npzs_from_folders(npz_folders)
+        npzs = {
+            sample_id: utils.create_dnanexus_links(
+                npzs[sample_id], app_handler, "npz"
+            )
+            for sample_id in npzs
+        }
     elif npz_jobs:
         for sample_id in npz_jobs:
             npzs[sample_id] = npz_jobs[sample_id].get_output_ref(
@@ -282,9 +288,7 @@ def create_ref(
         input_normal_samples = [npz.id for npz in npzs]
 
     inputs = {}
-    inputs["npz"] = utils.create_dnanexus_links(
-        list(input_normal_samples.values()), app_handler, "npz"
-    )
+    inputs["npz"] = list(input_normal_samples.values())
     inputs["binsize_newref"] = binsize
     inputs["create_ref"] = True
     job_name = f"{app_handler.name} - Create ref ({binsize})"
@@ -349,6 +353,12 @@ def call_cnvs(
 
     if npz_folders:
         npzs = get_npzs_from_folders(npz_folders, npz_samples)
+        npzs = {
+            sample_id: utils.create_dnanexus_links(
+                npzs[sample_id], app_handler, "npz"
+            )
+            for sample_id in npzs
+        }
     elif npz_jobs:
         for sample_id in npz_jobs:
             npzs[sample_id] = npz_jobs[sample_id].get_output_ref(
@@ -378,9 +388,7 @@ def call_cnvs(
 
     for sample_id in npzs:
         inputs = {}
-        inputs["npz"] = utils.create_dnanexus_links(
-            npzs[sample_id], app_handler, "npz"
-        )
+        inputs["npz"] = npzs[sample_id]
         inputs["reference"] = ref
         inputs["variant_calling"] = True
 
