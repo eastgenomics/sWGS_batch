@@ -100,8 +100,7 @@ def get_npzs_from_folders(npz_folders, npz_samples=[]):
             npz_file = dxpy.DXFile(npz["id"])
             npz_file_name = Path(npz_file.name).stem
             sample_id = "_".join(npz_file_name.split("_")[0:2])
-            dnanexus_link = utils.create_dnanexus_links([npz_file.id])
-            npzs[sample_id] = dnanexus_link
+            npzs[sample_id] = [npz_file.id]
 
     if npz_samples:
         for sample_id in npzs:
@@ -222,12 +221,12 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
         inputs = {}
         # both bam and bai are array:file classes so they need to be put in
         # lists
-        inputs["bam"] = [
-            utils.create_dnanexus_links(sample_bams_bais[sample_id]["bam"])
-        ]
-        inputs["bai"] = [
-            utils.create_dnanexus_links(sample_bams_bais[sample_id]["bai"])
-        ]
+        inputs["bam"] = utils.create_dnanexus_links(
+            sample_bams_bais[sample_id]["bam"], app_handler, "bam"
+        )
+        inputs["bai"] = utils.create_dnanexus_links(
+            sample_bams_bais[sample_id]["bai"], app_handler, "bai"
+        )
         inputs["binsize_convert"] = binsize
         inputs["convert_npz"] = True
         job_name = (
@@ -287,7 +286,9 @@ def create_ref(
         input_normal_samples = [npz.id for npz in npzs]
 
     inputs = {}
-    inputs["npz"] = list(input_normal_samples.values())
+    inputs["npz"] = utils.create_dnanexus_links(
+        list(input_normal_samples.values()), app_handler, "npz"
+    )
     inputs["binsize_newref"] = binsize
     inputs["create_ref"] = True
     job_name = f"{app_handler.name} - Create ref ({binsize})"
@@ -362,7 +363,9 @@ def call_cnvs(
         ref_object = dxpy.find_one_data_object(
             folder=folder_path, name=ref_name
         )
-        ref = utils.create_dnanexus_links([ref_object["id"]])
+        ref = utils.create_dnanexus_links(
+            [ref_object["id"]], app_handler, "reference"
+        )
     elif ref_job:
         ref = ref_job.get_output_ref("wisecondorx_output")
     else:
@@ -372,8 +375,10 @@ def call_cnvs(
 
     for sample_id in npzs:
         inputs = {}
-        inputs["npz"] = [npzs[sample_id]]
-        inputs["reference"] = [ref]
+        inputs["npz"] = utils.create_dnanexus_links(
+            npzs[sample_id], app_handler, "npz"
+        )
+        inputs["reference"] = ref
         inputs["variant_calling"] = True
 
         sex = get_sex_of_sample(sample_id, sample_sexes)
