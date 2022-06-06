@@ -4,6 +4,12 @@ import dxpy
 
 
 def get_run_datetime():
+    """ Return datetime as string in the following format: YYMMDD-HHmm
+
+    Returns:
+        str: Datetime in string format
+    """
+
     now = datetime.datetime.now()
     run_datetime = now.strftime("%y%m%d-%H%M")
     return run_datetime
@@ -49,14 +55,38 @@ def get_stage_output_folders(workflow_stage_info):
     return stage_folders
 
 
-def create_dnanexus_links(list_dnanexus_ids):
+def create_dnanexus_links(list_dnanexus_ids, app_handler, input_name):
+    """ Return dnanexus links when passed a iterable of dnanexus ids
+
+    Args:
+        list_dnanexus_ids (list): List of dnanexus ids
+
+    Returns:
+        list: List of dnanexus links
+    """
+
     list_dnanexus_links = []
 
     for dnanexus_id in list_dnanexus_ids:
         dnanexus_link = {"$dnanexus_link": dnanexus_id}
         list_dnanexus_links.append(dnanexus_link)
 
-    if len(list_dnanexus_links) == 1:
-        return list_dnanexus_links[0]
-    else:
+    input_type = get_input_type(app_handler, input_name)
+
+    if input_type == "array:file":
         return list_dnanexus_links
+    elif input_type == "file":
+        if len(list_dnanexus_links) == 1:
+            return list_dnanexus_links[0]
+        else:
+            print("blarg")
+
+
+def get_input_type(app_handler, input_name):
+    stage_input = None
+
+    for stage_input in app_handler.describe()["inputSpec"]:
+        if stage_input["name"] == input_name:
+            return stage_input["class"]
+
+    return stage_input
