@@ -111,8 +111,8 @@ if __name__ == "__main__":
         )
     )
     full_workflow.add_argument(
-        "-d", "--downsampled_bam_folder", nargs="+",
-        help="Downsampled bam DNAnexus folder"
+        "-f", "--bam_folder", nargs="+",
+        help="Bam DNAnexus folder"
     )
     full_workflow.add_argument(
         "-n", "--normal_file", help="File containing normal samples"
