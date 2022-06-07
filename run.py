@@ -48,7 +48,7 @@ def main(args):
 
         if cnv_cmd == "workflow":
             cnv_calling.run_cnv_calling(
-                app_handler, args.bam_folder, args.normal_file,
+                app_handler, args.bam_folders, args.normal_file,
                 args.sex_file, args.binsize_npz, args.binsize_ref,
                 args.out_folder
             )
