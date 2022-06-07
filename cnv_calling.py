@@ -278,6 +278,7 @@ def create_ref(
 
     npzs = {}
 
+    # prepare the npzs for the ref job
     if npz_folders:
         npzs = get_npzs_from_folders(npz_folders)
         npzs = {
@@ -294,6 +295,7 @@ def create_ref(
     else:
         raise Exception("No npz folder or npz jobs passed")
 
+    # filter out to get only the normal samples
     if normal_file:
         normal_samples = parse_normal_sample_file(normal_file)
         input_normal_samples = get_normal_samples(npzs, normal_samples)
@@ -319,6 +321,7 @@ def create_ref(
 
     print("Setting up reference job...")
 
+    # setup appropriate instance type
     if binsize > 2000 and binsize <= 5000:
         instance_type = "mem1_ssd1_v2_x36"
     elif binsize > 1000 and binsize <= 2000:
@@ -378,6 +381,7 @@ def call_cnvs(
 
     npzs = {}
 
+    # prepare npzs for the cnv calling jobs
     if npz_folders:
         npzs = get_npzs_from_folders(npz_folders, npz_samples)
         npzs = {
@@ -394,6 +398,7 @@ def call_cnvs(
     else:
         raise Exception("No npz folder or npz jobs passed")
 
+    # prepare the reference for the cnv calling jobs
     if ref_path:
         assert ref_path.startswith("/"), (
             "DNAnexus paths need to start with a /"
