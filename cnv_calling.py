@@ -297,10 +297,12 @@ def create_ref(
 
     print("Setting up reference job...")
 
-    if binsize > 1000 and binsize <= 5000:
+    if binsize > 2000 and binsize <= 5000:
         instance_type = "mem1_ssd1_v2_x36"
-    elif binsize <= 1000:
+    elif binsize > 1000 and binsize <= 2000:
         instance_type = "mem1_ssd1_v2_x72"
+    elif binsize <= 1000:
+        instance_type = "mem2_ssd1_v2_x64"
     else:
         instance_type = "mem1_ssd1_v2_x8"
 
