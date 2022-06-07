@@ -57,8 +57,6 @@ def get_mapping_numbers(flagstat_folders):
                         nb_mapped = line[0]
                         flagstats[sample_name] = nb_mapped
                         break
-        else:
-            print(f"No flagstat file found in {flagstat_folder}")
 
     assert flagstats, f"No flagstat files found in {flagstat_folders}"
 
@@ -105,8 +103,6 @@ def get_average_coverage(picard_folders):
             for header, data_ele in zip(headers, data):
                 if header == "MEAN_COVERAGE":
                     picard[sample_name] = data_ele
-        else:
-            print(f"No picard file found in {picard_folder}")
 
     assert picard, f"No picard files found in {picard_folders}"
 
