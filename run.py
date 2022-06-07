@@ -48,9 +48,15 @@ def main(args):
 
         if cnv_cmd == "workflow":
             cnv_calling.run_cnv_calling(
-                app_handler, args.bam_folders, args.normal_file,
-                args.sex_file, args.binsize_npz, args.binsize_ref,
-                args.out_folder
+                app_handler, args.bam_folders, args.normal_file, args.sex_file,
+                args.binsize_npz, args.binsize_ref, args.out_folder,
+                args.out_npz
+            )
+
+        if cnv_cmd == "from_npzs":
+            cnv_calling.run_from_npzs(
+                app_handler, args.npz_folders, args.binsize, args.normal_file,
+                args.sex_file, args.out_folder
             )
 
         if cnv_cmd == "npz":
@@ -128,6 +134,39 @@ if __name__ == "__main__":
         "-b_ref", "--binsize_ref", type=int, help="Binsize for reference"
     )
     full_workflow.add_argument(
+        "-o_npz", "--out_npz", default=None, help=(
+            "Output folder for the npzs files, useful when reusing the same "
+            "npzs"
+        )
+    )
+    full_workflow.add_argument(
+        "-o", "--out_folder",
+        help=(
+            "Output folder where output of the apps will dump their own out "
+            "folders"
+        )
+    )
+
+    from_npzs = cnv_subparser.add_parser(
+        "from_npzs",
+        help="Run the cnv calling from existing npzs files",
+        description=(
+            "Run the cnv calling from existing npzs files"
+        )
+    )
+    from_npzs.add_argument(
+        "-f", "--npz_folders", nargs="+", help="Npz DNAnexus folder(s)"
+    )
+    from_npzs.add_argument(
+        "-n", "--normal_file", help="File containing normal samples"
+    )
+    from_npzs.add_argument(
+        "-s", "--sex_file", help="File containing the sex of the samples"
+    )
+    from_npzs.add_argument(
+        "-b", "--binsize", type=int, help="Binsize for reference"
+    )
+    from_npzs.add_argument(
         "-o", "--out_folder",
         help=(
             "Output folder where output of the apps will dump their own out "
