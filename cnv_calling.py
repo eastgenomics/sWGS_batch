@@ -195,7 +195,8 @@ def parse_normal_sample_file(file):
 
 
 def convert_npz(
-    app_handler, bam_folder, binsize, out_folder, out_npzs_folder=None
+    app_handler, bam_folder, binsize, out_folder, out_npzs_folder=None,
+    ref_binsize=None
 ):
     """ Start jobs for converting bams to npz
 
@@ -204,8 +205,9 @@ def convert_npz(
         bam_folder (list): List of folders to look for bams and bais into
         binsize (int): Binsize for npz
         out_folder (str): Out folder for DNAnexus
-        out_npzs_folder (str): Out folder for the npzs specifically.
+        out_npzs_folder (str, optional): Out folder for the npzs specifically.
                                 Defaults to None
+        ref_binsize (int, optional): Binsize for reference. Defaults to None
 
     Returns:
         dict: Dict of sample ids and their job objects
@@ -223,6 +225,16 @@ def convert_npz(
     print("Setting up conversion jobs...")
 
     for sample_id in sample_bams_bais:
+        if ref_binsize:
+            job_name = (
+                f"{app_handler.name} - Workflow {binsize}kb/{ref_binsize}kb - "
+                f"Convert npz ({binsize}) - {sample_id}"
+            )
+        else:
+            job_name = (
+                f"{app_handler.name} - Convert npz ({binsize}) - {sample_id}"
+            )
+
         inputs = {}
         inputs["bam"] = utils.create_dnanexus_links(
             sample_bams_bais[sample_id]["bam"], app_handler, "bam"
@@ -232,9 +244,6 @@ def convert_npz(
         )
         inputs["binsize_convert"] = binsize
         inputs["convert_npz"] = True
-        job_name = (
-            f"{app_handler.name} - Convert npz ({binsize}) - {sample_id}"
-        )
         jobs[sample_id] = app_handler.run(inputs, folder=folder, name=job_name)
 
     print("Conversion jobs started...")
@@ -244,7 +253,7 @@ def convert_npz(
 
 def create_ref(
     app_handler, binsize, out_folder, normal_file=None, npz_folders=None,
-    npz_jobs=None,
+    npz_jobs=None, npz_binsize=None
 ):
     """ Start reference creation job
 
@@ -258,6 +267,7 @@ def create_ref(
                                     Defaults to None.
         npz_jobs (dict, optional): Dict containing sample ids and their
                                     conversion job. Defaults to None.
+        npz_binsize (int, optional): Npz binsize. Defaults to None
 
     Raises:
         Exception: check if npz folder or npz job is passed
@@ -296,7 +306,14 @@ def create_ref(
     inputs["npz"] = list(input_normal_samples.values())
     inputs["binsize_newref"] = binsize
     inputs["create_ref"] = True
-    job_name = f"{app_handler.name} - Create ref ({binsize})"
+
+    if npz_binsize:
+        job_name = (
+            f"{app_handler.name} - Workflow {npz_binsize}kb/{binsize}kb - "
+            f"Create ref ({binsize})"
+        )
+    else:
+        job_name = f"{app_handler.name} - Create ref ({binsize})"
 
     assert inputs["npz"], "No normal npz files found."
 
@@ -330,7 +347,8 @@ def create_ref(
 
 def call_cnvs(
     app_handler, sex_file, out_folder, npz_jobs=None, ref_job=None,
-    npz_samples=[], npz_folders=None, ref_path=None
+    npz_samples=[], npz_folders=None, ref_path=None, npz_binsize=None,
+    ref_binsize=None
 ):
     """ Start cnv calling jobs
 
@@ -348,6 +366,8 @@ def call_cnvs(
                                     Defaults to None.
         ref_path (str, optional): DNAnexus path to reference file.
                                     Defaults to None.
+        npz_binsize (int, optional): Npz binsize. Defaults to None
+        ref_binsize (int, optional): Ref binsize. Defaults to None
 
     Raises:
         Exception: Check if npz folder or npz jobs passed
@@ -404,7 +424,15 @@ def call_cnvs(
         if sex:
             inputs["sex"] = sex
 
-        job_name = f"{app_handler.name} - CNV calling ({sex}) - {sample_id}"
+        if npz_binsize and ref_binsize:
+            job_name = (
+                f"{app_handler.name} - Workflow {npz_binsize}kb/{ref_binsize}"
+                f"kb - CNV calling ({sex}) - {sample_id}"
+            )
+        else:
+            job_name = (
+                f"{app_handler.name} - CNV calling ({sex}) - {sample_id}"
+            )
 
         if npz_jobs and ref_job:
             jobs = [npz_jobs[sample_id]] + [ref_job]
@@ -441,14 +469,16 @@ def run_cnv_calling(
     """
 
     npz_jobs = convert_npz(
-        app_handler, bam_folder, npz_binsize, out_folder, out_npz_folder
+        app_handler, bam_folder, npz_binsize, out_folder, out_npz_folder,
+        ref_binsize=ref_binsize
     )
     ref_job = create_ref(
         app_handler, ref_binsize, out_folder, normal_file=normal_file,
-        npz_jobs=npz_jobs
+        npz_jobs=npz_jobs, npz_binsize=npz_binsize
     )
     call_cnvs(
-        app_handler, sex_file, out_folder, npz_jobs=npz_jobs, ref_job=ref_job
+        app_handler, sex_file, out_folder, npz_jobs=npz_jobs, ref_job=ref_job,
+        npz_binsize=npz_binsize, ref_binsize=ref_binsize
     )
 
 
