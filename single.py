@@ -40,7 +40,9 @@ def make_fq_dict(path):
         )
         next(fastqs)
     except StopIteration as e:
-        print(f"No fastqs found in {os.environ['DX_PROJECT_CONTEXT_ID']}{path}")
+        print(
+            f"No fastqs found in {os.environ['DX_PROJECT_CONTEXT_ID']}{path}"
+        )
     else:
         fastqs = dxpy.find_data_objects(
             name="*fastq.gz", folder=path, name_mode="glob"
@@ -62,9 +64,8 @@ def make_fq_dict(path):
                 read_num = "R2"
 
             assert read_num, (
-                "Unable to determine read number (R1 or R2) for fastq {}".format(
-                    fastq_obj.name
-                )
+                "Unable to determine read number (R1 or R2) for fastq "
+                f"{fastq_obj.name}"
             )
 
             # Make a new dict entry for sample if not present
