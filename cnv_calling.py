@@ -194,7 +194,9 @@ def parse_normal_sample_file(file):
 """ job functions """
 
 
-def convert_npz(app_handler, bam_folder, binsize, out_folder):
+def convert_npz(
+    app_handler, bam_folder, binsize, out_folder, out_npzs_folder=None
+):
     """ Start jobs for converting bams to npz
 
     Args:
@@ -202,10 +204,17 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
         bam_folder (list): List of folders to look for bams and bais into
         binsize (int): Binsize for npz
         out_folder (str): Out folder for DNAnexus
+        out_npzs_folder (str): Out folder for the npzs specifically.
+                                Defaults to None
 
     Returns:
         dict: Dict of sample ids and their job objects
     """
+
+    if out_npzs_folder:
+        folder = out_npzs_folder
+    else:
+        folder = f"{out_folder}/npzs"
 
     sample_bams_bais = get_bams_and_bais(bam_folder)
 
@@ -215,8 +224,6 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
 
     for sample_id in sample_bams_bais:
         inputs = {}
-        # both bam and bai are array:file classes so they need to be put in
-        # lists
         inputs["bam"] = utils.create_dnanexus_links(
             sample_bams_bais[sample_id]["bam"], app_handler, "bam"
         )
@@ -228,9 +235,7 @@ def convert_npz(app_handler, bam_folder, binsize, out_folder):
         job_name = (
             f"{app_handler.name} - Convert npz ({binsize}) - {sample_id}"
         )
-        jobs[sample_id] = app_handler.run(
-            inputs, folder=f"{out_folder}/npzs", name=job_name
-        )
+        jobs[sample_id] = app_handler.run(inputs, folder=folder, name=job_name)
 
     print("Conversion jobs started...")
 
@@ -420,7 +425,7 @@ def call_cnvs(
 
 def run_cnv_calling(
     app_handler, bam_folder, normal_file, sex_file, npz_binsize, ref_binsize,
-    out_folder
+    out_folder, out_npz_folder
 ):
     """ Run the full "workflow" for cnv calling using wisecondorX
 
@@ -432,13 +437,40 @@ def run_cnv_calling(
         npz_binsize (int): Binsize for convert npz jobs
         ref_binsize (int): Binsize for create reference job
         out_folder (str): DNAnexus out folder
+        out_npz_folder (str): Npz DNAnexus out folder
     """
 
-    npz_jobs = convert_npz(app_handler, bam_folder, npz_binsize, out_folder)
+    npz_jobs = convert_npz(
+        app_handler, bam_folder, npz_binsize, out_folder, out_npz_folder
+    )
     ref_job = create_ref(
         app_handler, ref_binsize, out_folder, normal_file=normal_file,
         npz_jobs=npz_jobs
     )
     call_cnvs(
         app_handler, sex_file, out_folder, npz_jobs=npz_jobs, ref_job=ref_job
+    )
+
+
+def run_from_npzs(
+    app_handler, npz_folders, binsize, normal_file, sex_file, out_folder
+):
+    """ Run the cnv calling from already generated npzs
+
+    Args:
+        app_handler (DXApp): App handler for WisecondorX
+        npz_folders (list): List of npz folders
+        binsize (int): Binsize for reference creation
+        normal_file (str): Path to normal file
+        sex_file (str): Path to sex file
+        out_folder (str): DNAnexus out folder
+    """
+
+    ref_job = create_ref(
+        app_handler, binsize, out_folder, normal_file=normal_file,
+        npz_folders=npz_folders
+    )
+    call_cnvs(
+        app_handler, sex_file, out_folder, npz_folders=npz_folders,
+        ref_job=ref_job
     )
