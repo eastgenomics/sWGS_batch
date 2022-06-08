@@ -83,6 +83,16 @@ def create_dnanexus_links(list_dnanexus_ids, app_handler, input_name):
 
 
 def get_input_type(app_handler, input_name):
+    """ Get the input type given the input name
+
+    Args:
+        app_handler (DXApp): DXApp for WisecondorX
+        input_name (str): Input name
+
+    Returns:
+        str: Type of the input
+    """
+
     stage_input = None
 
     for stage_input in app_handler.describe()["inputSpec"]:
