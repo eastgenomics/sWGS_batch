@@ -79,7 +79,10 @@ def create_dnanexus_links(list_dnanexus_ids, app_handler, input_name):
         if len(list_dnanexus_links) == 1:
             return list_dnanexus_links[0]
         else:
-            print("blarg")
+            raise Exception((
+                f"Input type for {input_name} is 'file' but multiple inputs "
+                f"have been gathered: {list_dnanexus_ids}"
+            ))
 
 
 def get_input_type(app_handler, input_name):
