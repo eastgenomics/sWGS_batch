@@ -98,6 +98,17 @@ def make_fq_dict(path):
 
 
 def setup_inputs_workflow(stages, sample, reads):
+    """ Setup the inputs for the single workflow
+
+    Args:
+        stages (dict): Dict of the stages and their stage id input
+        sample (str): Sample id
+        reads (dict): Dict of reads
+
+    Returns:
+        dict: Dict of stage ids and their dnanexus links inputs
+    """
+
     inputs = {}
 
     inputs[stages["sentieon_R1"]] = utils.create_dnanexus_links(reads["R1"])
@@ -111,6 +122,15 @@ def setup_inputs_workflow(stages, sample, reads):
 
 
 def run_workflow(workflow, fastq_dict, stages, stage_folders):
+    """ Start the single workflow jobs
+
+    Args:
+        workflow (DXWorkflow): Workflow object
+        fastq_dict (dict): Dict of sample and their fastqs
+        stages (dict): Dict of stages and their input name
+        stage_folders (dict): Dict of stages and their output folder
+    """
+
     run_datetime = utils.get_run_datetime()
 
     for sample, reads in fastq_dict.items():
